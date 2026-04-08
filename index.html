@@ -3,14 +3,25 @@
   <meta charset="UTF-8">
   <title>Flappy Bird Clone</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #70c5ce; }
-    canvas { display: block; margin: auto; background: #70c5ce; }
+    body { margin: 0; overflow: hidden; background: #70c5ce; display: flex; flex-direction: column; align-items: center; }
+    canvas { display: block; background: #70c5ce; }
+    #flyBtn {
+      width: 100%;
+      height: 120px;
+      font-size: 24px;
+      background: #ffcc00;
+      border: none;
+      outline: none;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="400" height="600"></canvas><script>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<button id="flyBtn">TAP TO FLY</button><script>
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const flyBtn = document.getElementById("flyBtn");
 
 let bird = { x: 50, y: 150, width: 30, height: 30, gravity: 0.6, lift: -10, velocity: 0 };
 let pipes = [];
@@ -93,13 +104,15 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-document.addEventListener("keydown", () => {
+// Controls
+function flap() {
   bird.velocity = bird.lift;
-});
+}
 
-canvas.addEventListener("click", () => {
-  bird.velocity = bird.lift;
-});
+document.addEventListener("keydown", flap);
+canvas.addEventListener("click", flap);
+flyBtn.addEventListener("touchstart", flap);
+flyBtn.addEventListener("click", flap);
 
 gameLoop();
 </script></body>
