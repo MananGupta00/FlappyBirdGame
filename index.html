@@ -1,111 +1,170 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Chicken Egg Game</title>
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chicken Maze Game</title>
+
+<style>
     body {
-      text-align: center;
-      background-color: #87CEEB; /* blue background */
-      font-family: Arial;
+        margin: 0;
+        overflow: hidden;
+        background: #aee1f9;
+        font-family: Arial;
     }
 
-    #gameArea {
-      position: relative;
-      height: 400px;
-    }
-
-    #chicken {
-      font-size: 80px;
-      margin-top: 50px;
-      display: inline-block;
-      transition: transform 0.2s;
-    }
-
-    #egg, #chick {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 50px;
-      display: none;
-    }
-
-    #egg {
-      top: 150px;
-    }
-
-    #chick {
-      top: 150px;
+    canvas {
+        display: block;
+        background: #d4f4dd;
     }
 
     #btn {
-      margin-top: 20px;
-      padding: 20px 40px;
-      font-size: 20px;
-      border-radius: 20px;
-      border: none;
-      background-color: pink;
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        height: 80px;
+        font-size: 24px;
+        border-radius: 20px;
+        border: none;
+        background: orange;
     }
-
-    #counter {
-      font-size: 24px;
-      margin-top: 10px;
-    }
-  </style>
+</style>
 </head>
 
 <body>
 
-  <h2 id="counter">Eggs: 0</h2>
+<canvas id="game"></canvas>
+<button id="btn">TAP TO MOVE 🐔</button>
 
-  <div id="gameArea">
-    <div id="chicken">🐥</div>
-    <div id="egg">🥚</div>
-    <div id="chick">🐣</div>
-  </div>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-  <button id="btn" onclick="layEgg()">LAY EGG</button>
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-  <script>
-    let eggs = localStorage.getItem("eggs") || 0;
-    document.getElementById("counter").innerText = "Eggs: " + eggs;
+// Path (maze solution)
+let path = [
+    {x:50,y:100},{x:150,y:100},{x:150,y:200},{x:250,y:200},
+    {x:250,y:300},{x:350,y:300},{x:350,y:400},{x:450,y:400}
+];
 
-    function layEgg() {
-      eggs++;
-      localStorage.setItem("eggs", eggs);
-      document.getElementById("counter").innerText = "Eggs: " + eggs;
+let index = 0;
 
-      let chicken = document.getElementById("chicken");
-      let egg = document.getElementById("egg");
-      let chick = document.getElementById("chick");
+// Mommy chicken
+let mom = {x: path[0].x, y: path[0].y};
 
-      // chicken movement
-      chicken.style.transform = "translateY(-20px)";
-      setTimeout(() => {
-        chicken.style.transform = "translateY(0)";
-      }, 200);
+// Eggs & chicks
+let eggs = [];
+let chicks = [];
+let showChicks = false;
 
-      // show egg
-      egg.style.display = "block";
-      egg.style.transform = "translateX(-50%) scale(1.3)";
+// Corn
+let smallCorn = null;
+let bigCorn = {x: 500, y: 400};
 
-      // bounce effect
-      setTimeout(() => {
-        egg.style.transform = "translateX(-50%) scale(1)";
-      }, 200);
+// Create eggs along path
+for (let i = 0; i < path.length; i++) {
+    eggs.push({x: path[i].x, y: path[i].y});
+}
 
-      // hatch after bounce
-      setTimeout(() => {
-        egg.style.display = "none";
-        chick.style.display = "block";
-
-        // remove chick after 20 seconds
-        setTimeout(() => {
-          chick.style.display = "none";
-        }, 20000);
-
-      }, 800);
+// Tap button
+document.getElementById("btn").onclick = () => {
+    if (index < path.length - 1) {
+        index++;
+        mom.x = path[index].x;
+        mom.y = path[index].y;
     }
-  </script>
+
+    // Reached end
+    if (index === path.length - 1 && !smallCorn) {
+        smallCorn = {x: mom.x, y: mom.y};
+        showChicks = true;
+
+        // Convert eggs to chicks
+        chicks = eggs.map(e => ({x: e.x, y: e.y}));
+    }
+};
+
+// Draw functions
+function drawMom() {
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(mom.x, mom.y, 15, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawEggs() {
+    ctx.fillStyle = "white";
+    eggs.forEach(e => {
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+function drawChicks() {
+    ctx.fillStyle = "yellow";
+    chicks.forEach(c => {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+function drawCorn(c, size) {
+    ctx.fillStyle = "gold";
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, size, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+// Move chicks following path
+function moveChicks() {
+    chicks.forEach((c, i) => {
+        let target = path[Math.min(path.length - 1, index)];
+
+        c.x += (target.x - c.x) * 0.02;
+        c.y += (target.y - c.y) * 0.02;
+    });
+}
+
+// Game loop
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw path
+    ctx.strokeStyle = "#555";
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    path.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+
+    if (!showChicks) {
+        drawEggs();
+    } else {
+        drawChicks();
+        moveChicks();
+    }
+
+    drawMom();
+
+    if (smallCorn) {
+        drawCorn(smallCorn, 5);
+    }
+
+    // Big corn at end
+    if (index === path.length - 1) {
+        drawCorn(bigCorn, 25);
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
 
 </body>
 </html>
